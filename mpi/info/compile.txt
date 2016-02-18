@@ -1,0 +1,2 @@
+mpicc file.c -o a.out
+mpirun -np NUMBER_OF_PROCESSES a.out arg1 arg2
