@@ -27,7 +27,7 @@ int main(int argc, char *argv[]) {
         MPI_Comm_size(MPI_COMM_WORLD, &size);
         MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-	printf("%d\t", size);
+	printf("%d/%d\t", rank, size);
 	int N;
 	if (argc > 1) {sscanf(argv[1],"%d", &N);} else {N = 10000;}
 	int M = MN*N-1;

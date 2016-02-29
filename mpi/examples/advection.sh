@@ -1,6 +1,6 @@
 #!/bin/bash
 
-mpicc -Wall -g linear.c -lm -o a.out
+mpicc -Wall -g advection.c -lm -o a.out
 #for n in {1..18}
 for n in 1 2;
 do
