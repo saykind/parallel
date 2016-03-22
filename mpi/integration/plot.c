@@ -20,6 +20,6 @@ void plot(FILE *gpp, double *x, double *f, int N) {
 	}
 	fprintf(gpp,"e\n");
 	fflush(gpp);
-	usleep(200);
+	//usleep(200);
 	return;
 }
