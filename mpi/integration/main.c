@@ -9,7 +9,7 @@
 #define b 1.
 //double f(double x) {return (x==0.) ? 1 :(sin(x)/x)*(sin(x)/x);}
 //double f(double x) {return (1.0/sqrt(pi))*exp(-x*x/4096);}
-double f(double x) {return (2.0)/(1+x*x);}
+double f(double x) {return (4.0)/(1+x*x);}
 
 
 int main(int argc, char *argv[]) {
