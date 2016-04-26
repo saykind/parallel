@@ -1,5 +1,8 @@
 *~
 *.out
+*.eps
+*.jpeg
+*.pdf
 *.dat
 *.swp
 *.tar*
