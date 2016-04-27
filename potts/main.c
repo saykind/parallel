@@ -9,12 +9,13 @@
 
 #define q 3
 #define J -1.0
-#define H .15
+#define H .1
+#define T0 2.0
 #define T1 4.0
 
 int main(int argc, char *argv[]) {
 	int l;	int const N = 64;	int const NN = N*N;
-	int const L = 512;	int const K = 1024*1024;
+	int const L = 256;	int const K = 256*1024*1024;
 	double *T = malloc(L*sizeof(double));
 	double *E = malloc(L*sizeof(double));
 	double *M = malloc(L*sizeof(double));
@@ -24,7 +25,7 @@ int main(int argc, char *argv[]) {
 	double e, h; e = .0; h = .0;
 	int c, m; c = 0; m = 0;
 
-#pragma omp parallel default(shared) private(s,i,j,k,t,i0,j0,e,h,c,m) num_threads(333)
+#pragma omp parallel default(shared) private(s,i,j,k,t,i0,j0,e,h,c,m) num_threads(1)
 {
 	s = malloc(N*sizeof(char*));
 	for (l = 0; l < N; l++)	*(s+l) = malloc(N*sizeof(char));
@@ -34,7 +35,7 @@ int main(int argc, char *argv[]) {
 	for (t = 0; t < L; t++)	{							// temperature change
 		e = .0;
 		m = .0;
-		T[t] = T1/L*(t+1);
+		T[t] = T0+(T1-T0)/L*(t+1);
 		for (i = 0; i < N; i++)	{						// grid initialization
 			for (j = 0; j < N; j++) {
 				s[i][j] = rand() % q;
@@ -85,7 +86,7 @@ int main(int argc, char *argv[]) {
 	fprintf(gpp, "set title 'Energy'\n set xlabel 'T/J'\n set ylabel 'E/J'\n");
 	fprintf(gpp, "set label 1 'H = %.2lf' at 2.3, -2.5\n", H);
 	plot(gpp, T, E, L, "energy.eps");
-	fprintf(gpp, "set title 'Moment'\n set xlabel 'T/J'\n set ylabel 'M/J'\n");
+	fprintf(gpp, "set title 'Moment'\n set xlabel 'T/J'\n set ylabel 'M'\n");
 	fprintf(gpp, "set label 1 'H = %.2lf' at 2.3, 1.55\n", H);
 	plot(gpp, T, M, L, "moment.eps");
 #endif
@@ -95,8 +96,8 @@ int main(int argc, char *argv[]) {
 	FILE *efp = fopen(name, "a");
 	sprintf(name,"M_data_H=%.2lf.dat", H);
 	FILE *mfp = fopen(name, "a");
-	for (l = 0; l < N; l++)	fprintf(efp,"%.14lf\t%.14lf\n", T[l], E[l]);
-	for (l = 0; l < N; l++)	fprintf(mfp,"%.14lf\t%.14lf\n", T[l], M[l]);
+	for (l = 0; l < L; l++)	fprintf(efp,"%.14lf\t%.14lf\n", T[l], E[l]);
+	for (l = 0; l < L; l++)	fprintf(mfp,"%.14lf\t%.14lf\n", T[l], M[l]);
 #endif
 	free(T);
 	free(E);
