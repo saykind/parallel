@@ -16,9 +16,8 @@ void plot(FILE *gpp, double *x, double *f, int N, char *title) {
 	int i;
 	fprintf(gpp, "set output '%s'\n", title);
 	fprintf(gpp, "plot '-' w points pt 1 ps .5\n");
-	for (i = 0; i < N; i++) {
+	for (i = 0; i < N; i++)
 		fprintf(gpp, "%.6f %.6f\n", x[i], f[i]);
-	}
 	fprintf(gpp,"e\n");
 	fflush(gpp);
 	return;
