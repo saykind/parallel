@@ -4,8 +4,11 @@
 #include <math.h>
 #include <omp.h>
 #include "plot.h"
+#define rk omp_get_thread_num()
+#define VERBOSE
 #define PLOT 
-#define DATA 
+//#define DATA 
+#define RANDOMIZE_MAX 2147483647
 
 #define q 3
 #define J -1.0
@@ -13,9 +16,14 @@
 #define T0 0.
 #define T1 2.
 
+int randomize(unsigned long int *seed) {
+	*seed = (*seed)*5787830189 + 8089496165;
+	return  (int) ((*seed) % RANDOMIZE_MAX);
+}
+
 int main(int argc, char *argv[]) {
 	int l;	int const N = 64;	int const NN = N*N;
-	int const L = 256;		int const K = 8*1024*1024;
+	int const L = 127;		int const K = 64*1024*1024;
 	int const KK = K/8;									// equalibration
 	double *T = malloc(L*sizeof(double));
 	double *E = malloc(L*sizeof(double));
@@ -23,15 +31,30 @@ int main(int argc, char *argv[]) {
 	for (l = 0; l < L; l++) {T[l] = 0.; E[l] = .0; M[l] = .0;}
 	char s[N][N];
 	int i, j, i0, j0, k, t;
-	double e, h; e = .0; h = .0;
-	int c, m; c = 0; m = 0;
+	unsigned long int seed;
+	double e = .0, h = .0, start;
+	int c = 0, m = 0, nt = 4;
+	omp_set_num_threads(nt);
+#ifdef VERBOSE
+	double pc = .0, tm;
+#endif
 
-#pragma omp parallel default(shared) private(s,i,j,k,t,i0,j0,e,h,c,m) num_threads(1)
+#pragma omp parallel default(shared) private(s,i,j,k,t,i0,j0,e,h,c,m,seed)
 {
-	srand(time(NULL));
+	start = omp_get_wtime();
+	seed = start;
 #pragma omp for 
 	for (t = 0; t < L; t++)	{							// temperature change
-		T[t] = T0+(T1-T0)/L*(t+1);
+		seed += t*874532;
+		T[t] = T0+(T1-T0)/(L+1)*(t+1);
+		#ifdef VERBOSE
+		if (!rk) {
+			tm = omp_get_wtime()-start;
+			pc = 1.*(t+1)/L;
+			printf(" \t %.0lf sec  \t%.0lf%%\test: %.0lf sec\r", tm, 100.*pc*nt, tm/pc/nt); 
+			fflush(stdout);
+		}
+		#endif
 		e = .0;
 		m = .0;
 		for (i = 0; i < N; i++)	{						// grid initialization
@@ -49,9 +72,9 @@ int main(int argc, char *argv[]) {
 			}
 		e += -H*m;
 		for (k = 1; k <= K; k++)	{					// Markov chain steps
-			i0 = rand() % N;
-			j0 = rand() % N;
-			c = (s[i0][j0] + 1 + (rand() % (q-1))) % q; 			// changed value of random spin c=s'-s
+			i0 = randomize(&seed) % N;
+			j0 = randomize(&seed) % N;
+			c = (s[i0][j0] + 1 + (randomize(&seed) % (q-1))) % q; 		// changed value of random spin c=s'-s
 			h = .0;
 			if (s[i0][j0] == s[(i0+1)%N][j0])	h -= J;			// change in energy h=e'-e
 			else if (c == s[(i0+1)%N][j0])		h += J;
@@ -62,7 +85,7 @@ int main(int argc, char *argv[]) {
 			if (s[i0][j0] == s[i0][(j0-1+N)%N])	h -= J;
 			else if (c == s[i0][(j0-1+N)%N])	h += J;
 			h += -H*(c-s[i0][j0]);			
-			if (rand() < 1.0/(1.0+exp(h/T[t]))*RAND_MAX) {			// whether new state is accepted
+			if (randomize(&seed) < 1.0/(1.0+exp(h/T[t]))*RANDOMIZE_MAX) {	// whether new state is accepted
 				e += h; 
 				m += c-s[i0][j0]; 
 				s[i0][j0] = c;
@@ -77,16 +100,17 @@ int main(int argc, char *argv[]) {
 	}
 #pragma omp barrier
 }
+	printf(" \t %.0lf sec  \t%.0lf%%\n", omp_get_wtime()-start, 100.); 
 #ifdef PLOT
 	FILE *gpp = gpinit();
 	char output[40];
 	fprintf(gpp, "set title 'Energy in Potts model (Z = 4, q = %d)'\n", q);
        	fprintf(gpp, "set xlabel 'T/J'\n set ylabel 'E/ZJ'\n");
-	sprintf(output,"energy_q=%d_H=%.2lf.eps", q, H);
+	sprintf(output,"Energy_q=%d_H=%.2lf.eps", q, H);
 	plot(gpp, T, E, L, output);
 	fprintf(gpp, "set title 'Magnetic Moment in Potts model (Z = 4, q = %d)'\n", q);
 	fprintf(gpp, "set xlabel 'T/J'\n set ylabel 'M_{normalized}'\n");
-	sprintf(output,"moment_q=%d_H=%.2lf.eps", q, H);
+	sprintf(output,"Moment_q=%d_H=%.2lf.eps", q, H);
 	plot(gpp, T, M, L, output);
 #endif
 #ifdef DATA
