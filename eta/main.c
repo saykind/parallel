@@ -1,22 +1,50 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <math.h>
 #include <complex.h>
 #include <omp.h>
 #include "params.h"
 
-int simulate(int N, double complex **h, double complex **S, double **g, double **g2, int ***ac);
+int simulate(double p8, int N, double complex **h, double complex **S, double **g, double **g2, int ***ac);
 
 int main(int argc, char *argv[]) {
-    int nt = 1, N = N0, M=M0, i, j, i0, j0, k1, k2, q1, q2;
-    char thrmlzd = 0;
-    if (argc > 1) {sscanf(argv[1], "%d", &nt);}
-    if (argc > 2) {sscanf(argv[2], "%d", &N);}
-    if (argc > 3) {sscanf(argv[3], "%d", &M);}
+    int nt = nt0, N = N0, M=M0, MTH=MT0, L=2*N+1, i, j, i0, j0, k1, k2, q1, q2;
+    double p8 = p80;
+    char thrmlzd = 0, verbose = 0;
+    for(i = 1; i < argc; i++ ) {
+        if (!strcmp(argv[i],"-h") || !strcmp(argv[i],"--help")) {
+            printf("Usage:\n -h\tprint this message\n -v\tverbose mode [not recommended for N<25]\n -d\tprint default values\n");
+            printf(" nt=%%d\tset number of threads\n");
+            printf(" N=%%d\tset linear lattice size L=2*N+1 total size L*L\n");
+            printf(" MTH=%%d\tset number of thermalization MC steps (total: MTH*L*L) [recommended value MTH=2000]\n");
+            printf(" M=%%d\tset number of MC steps (total: M*L*L)\n");
+            printf(" p8=%%f\tset interaction force (0 < p8 < 6.28)\n");
+            return 0;
+        } 
+        if (!strcmp(argv[i],"-v")) {
+            verbose = 1;
+            continue;
+        }
+        if (!strcmp(argv[i],"-d") || !strcmp(argv[i],"--default") ) {
+            printf("Default values:\n");
+            printf(" N=%d\t L=%d\t M=%d\t MTH=%d thrds=%d\t p8=%.1lf\n", N, L, M, MTH, nt, p8);
+            return 0;
+        }  
+        if (argv[i][0] == '-') {
+            printf("Unknown option '%s'\n", argv[i]);
+            return 0;
+        }           
+        sscanf(argv[i], "nt=%d", &nt);
+        sscanf(argv[i], "N=%d", &N);
+        sscanf(argv[i], "M=%d", &M);
+        sscanf(argv[i], "MTH=%d", &MTH);
+        sscanf(argv[i], "p8=%lf", &p8);
+    }
     omp_set_num_threads(nt);
-    int L=2*N+1;    
-    printf("N =\t%d\nL =\t%d\nthrds =\t%d\n", N, L, nt);
+    L=2*N+1;    
+    printf("N =\t%d\nL =\t%d\nthrds =\t%d\np8 =\t%.1lf\n", N, L, nt, p8);
 
     /* Memory allocation */
     double complex **h = (double complex **)malloc(L*sizeof(double complex*));
@@ -35,8 +63,8 @@ int main(int argc, char *argv[]) {
 	    *(*(c+1)+i) = (int *)malloc(L*sizeof(int));
 	}
 
-    
     /* Data initialization */
+    double t0 = omp_get_wtime();
     char name[10]; 
     sprintf(name,"N=%d.dat", N);
     FILE *file = fopen(name, "r");
@@ -57,6 +85,9 @@ int main(int argc, char *argv[]) {
         thrmlzd = 1;
     } else {
         double a = 2*pi/L, x;
+#pragma omp parallel default(shared) private(q1, q2, k1, k2, i, j, i0, j0, x)
+{
+        #pragma omp for nowait
         for (i = 0; i < L; i++)
              for (j = 0; j < L; j++) {
                 if ( (i==0) && (j==0) ) {
@@ -73,45 +104,58 @@ int main(int argc, char *argv[]) {
                 c[1][i][j] = 0;
                 S[i][j] = 0;
             }
+        #pragma omp barrier   
+        #pragma omp for nowait
         for (q1 = -N; q1 < N+1; q1++)
             for (q2 = -N; q2 < N+1; q2++) {
                 if ( (q1==0) && (q2==0) )
                     continue;
                 for (k1 = -N; k1 < N+1; k1++)
-                    for (k2 = -N; k2 < N+1; k2++)
-                        S[(q1+L)%L][(q2+L)%L] += a*a*(k1*q2-k2*q1)*(k1*q2-k2*q1)/(q1*q1+q2*q2)*h[(k1+L)%L][(k2+L)%L]*conj(h[(k1+q1+L)%L][(k2+q2+L)%L]);
+                    for (k2 = -N; k2 < N+1; k2++)   {
+                        double p = a*(k1*q2-k2*q1)/(q1*q1+q2*q2);
+                        S[(q1+L)%L][(q2+L)%L] += p*p*h[(k1+L)%L][(k2+L)%L]*conj(h[(k1+q1+L)%L][(k2+q2+L)%L]);
+                    }
             }
     }
+}
+    printf("init =\t%.1lf min\n", (omp_get_wtime()-t0)/60);
     
 	/* Monte Carlo simulation */
+	time_t rawtime;
+	time ( &rawtime );
+	printf ( "now =\t%s", asctime (localtime ( &rawtime )) );
 	/* Thermalization */
-	double t0 = omp_get_wtime();
+	t0 = omp_get_wtime();
 	double T0 = 24e-8;
 	srand(time(NULL));
 	if (!thrmlzd) {
-        printf("MTH =\t%d\t(est: %.2f min)\n", MT0*L*L, T0*MT0*L*L*L*L/60 );
-        for (i = 0; i < MT0*L*L; i++) {
- 		    #ifdef VERBOSE
-			    double t = (double) omp_get_wtime()-t0, pc = 1.*(i+1)/L/L/MT0;
-			    printf(" \t %.0lf sec  \t%.0lf%%\test: %.0lf sec\r", t, 100.*pc, t/pc); 
-			    fflush(stdout);
-		    #endif
-            simulate(N, h, S, g, g2, NULL);
+        printf("MTH =\t%d*%d\t(est: %.2f min)\n", MTH, L*L, T0*MT0*L*L*L*L/60 );
+        for (i = 0; i < MTH; i++) {
+		    for (j = 0; j < L*L; j++)
+                simulate(p8, N, h, S, NULL, NULL, NULL);
+     		if (verbose) {
+		        double t = (double) omp_get_wtime()-t0, pc = 1.*(i+1)/MT0;
+		        printf("  %.0lf sec  \t%.0lf%%\test: %.1f min (%.0lf sec)\r", t, 100.*pc, t/pc/60, t/pc); 
+		        fflush(stdout);
+		    }
         }
-        printf("time =\t%.1lf sec\n", omp_get_wtime()-t0);
+        printf("time =\t%.2lf min\n", (omp_get_wtime()-t0)/60);
         t0 = omp_get_wtime();
     }
+	time ( &rawtime );
+	printf ( "now =\t%s", asctime (localtime ( &rawtime )) );
     /* Monte Carlo average */
-    printf("M =\t%d\t(est: %.2f min)\n", M*L*L, T0*M*L*L*L*L/60);
-    for (i = 0; i < M*L*L; i++)    {
-		#ifdef VERBOSE
-			double t = (double) omp_get_wtime()-t0, pc = 1.*(i+1)/L/L/M;
-			printf(" \t %.0lf sec  \t%.0lf%%\test: %.0lf sec\r", t, 100.*pc, t/pc); 
-			fflush(stdout);
-		#endif
-        simulate(N, h, S, g, g2, c);
+    printf("M =\t%d*%d\t(est: %.2f min)\n", M, L*L, T0*M*L*L*L*L/60);
+    for (i = 0; i < M; i++) {    
+    	for (j = 0; j < L*L; j++)
+        	simulate(p8, N, h, S, g, g2, c);
+	    if (verbose) {
+	        double t = (double) omp_get_wtime()-t0, pc = 1.*(i+1)/M;
+	        printf("  %.0lf sec  \t%.0lf%%\test: %.1f min (%.0lf sec)\r", t, 100.*pc, t/pc/60, t/pc); 
+	        fflush(stdout);
+	    }
     }
-    printf("time =\t%.1lf sec\n", omp_get_wtime()-t0);
+    printf("time =\t%.2lf min\n", (omp_get_wtime()-t0)/60);
 
     /* Data dump */
     file = fopen(name, "w+"); if (!file) {printf("Cannot save data\n"); return -1;}
