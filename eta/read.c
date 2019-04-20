@@ -11,7 +11,6 @@ FILE   *gpinit(void);
 int main(int argc, char *argv[]) {
     int N = N0, i, j, d3 = 0;
     double p8 = p80;
-    int L =2*N+1;
     for(i = 1; i < argc; i++ ) {
         if (!strcmp(argv[i],"-3d")) {
             d3 = 1;
@@ -24,6 +23,7 @@ int main(int argc, char *argv[]) {
         sscanf(argv[i], "N=%d", &N);
         sscanf(argv[i], "p8=%lf", &p8);
     }    
+    int L =2*N+1;
 
     /* Memory allocation */
 	double **g = (double **)malloc(L*sizeof(double *));
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
                     g2[i][j] = 4*sqrt(fabs((g2[i][j]-g[i][j]*g[i][j])/c[1][i][j]));
                     printf("[%d,%d]\t%.3f +/- %.3f  \t(%.0f %% of %d times)\n", i, j, g[i][j], g2[i][j], 100.*c[0][i][j]/c[1][i][j], c[1][i][j]);
                     g2[i][j] /= g[i][j];
-                } else {printf("c[1][%d][%d] == 0\n", i, j);}
+                } else {printf("c[1][%d][%d] == %d\n", i, j, N);}
             }        
         fclose(file);
     } else {
@@ -65,21 +65,22 @@ int main(int argc, char *argv[]) {
     }
     
     /* Plots */
-	FILE *gpp = gpinit();
+	FILE *gpp = gpinit();	
+	fprintf(gpp, "set xrange [ %lf : %lf ]\n", 1.8*pi/L, 1.1*pi);
     char output[20]; 
-    double Q[N], Gx[N], Gy[N], Gr[N], A=2.*(2*pi/L)*(2*pi/L)*(2*pi/L)*(2*pi/L);
+    double Q[N], Gx[N], Gy[N], Gr[N], A=2;
     for (i = 0; i < N; i++) {
-        Q[i] = i+1;
+        Q[i] = (i+1)*2*pi/L;
         Gx[i] = 1./g[i+1][0];
         Gy[i] = 1./g[0][i+1];
         Gr[i] = 1./g[i+1][i+1];
     }
-    fprintf(gpp, "set title 'Inverse Green function (L = %d)'\n", L);
+    fprintf(gpp, "set title 'Inverse Green function (L = %d, p*=%.0lf)'\n", L, p8);
     fprintf(gpp, "set logscale xy\n");
     // x-axis
     sprintf(output,"Lx=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q_x'\n set ylabel 'G^{-1}'\n");
-	fprintf(gpp, "plot %f*x**4, %f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, (p8*L/2/pi));
+	fprintf(gpp, "plot %f*x**4, %f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, p8);
 	for (i = 0; i < N; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", Q[i], Gx[i], Gx[i]*g2[i+1][0]);
 	fprintf(gpp,"e\n");
@@ -87,7 +88,7 @@ int main(int argc, char *argv[]) {
 	// y-axis
     sprintf(output,"Ly=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q_y'\n set ylabel 'G^{-1}'\n");
-	fprintf(gpp, "plot %f*x**4, '-' w errorbars pt 7 ps .5\n", A);
+	fprintf(gpp, "plot %f*x**4, %f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, p8);
 	for (i = 0; i < N; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", Q[i], Gy[i], Gy[i]*g2[0][i+1]);
 	fprintf(gpp,"e\n");
@@ -95,7 +96,7 @@ int main(int argc, char *argv[]) {
 	// r-axis
     sprintf(output,"Lr=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q'\n set ylabel 'G^{-1}'\n");
-	fprintf(gpp, "plot %f*(2*x**2)**2, '-' w errorbars pt 7 ps .5\n", A);
+	fprintf(gpp, "plot 4*%f*x**4, 4*%f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, p8);
 	for (i = 0; i < N; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", Q[i], Gr[i], Gr[i]*g2[i+1][i+1]);
 	fprintf(gpp,"e\n");

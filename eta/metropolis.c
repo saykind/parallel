@@ -41,7 +41,7 @@ int simulate(double p8, int N, double complex **h, double complex **S, double **
                 s += (k1*q2-k2*q1)*(k1*q2-k2*q1)*conj(z)*conj(z)*d;
             s *= a*a*d/(q1*q1+q2*q2)/(q1*q1+q2*q2);
             dS[(q1+L)%L][(q2+L)%L] = s;
-            w += creal( (2*S[(q1+L)%L][(q2+L)%L]+dS[(q1+L)%L][(q2+L)%L])*conj(dS[(q1+L)%L][(q2+L)%L]) );
+            w += creal( (2*S[(q1+L)%L][(q2+L)%L]+s)*conj(s) );
         }
 }
     w *= -Y/L/L;
@@ -60,7 +60,9 @@ int simulate(double p8, int N, double complex **h, double complex **S, double **
     if (c && g && g2) {
         a = creal(h[(k1+L)%L][(k2+L)%L]*conj(h[(k1+L)%L][(k2+L)%L]));
         g[(k1+L)%L][(k2+L)%L] += a;
+        g[(L-k1)%L][(L-k2)%L] += a;
         g2[(k1+L)%L][(k2+L)%L] += a*a;
+        g2[(L-k1)%L][(L-k2)%L] += a*a;
         c[1][(k1+L)%L][(k2+L)%L]++;
         c[1][(L-k1)%L][(L-k2)%L]++;
     }  
