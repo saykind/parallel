@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
                 simulate(p8, N, h, S, NULL, NULL, NULL);
      		if (verbose) {
 		        double t = (double) omp_get_wtime()-t0, pc = 1.*(i+1)/MTH;
-		        printf("  %.1lf min  \t%.0lf%%\test: %.1f min\tleft: %.1f min\r", t/60, 100.*pc, t/pc/60, (1-pc)*(t/pc)/60); 
+		        printf("  %.1lf min  \t%.0lf%%\test: %.1f min\tleft: %.1f min\t \r", t/60, 100.*pc, t/pc/60, (1-pc)*(t/pc)/60); 
 		        fflush(stdout);
 		    }
         }
@@ -148,18 +148,20 @@ int main(int argc, char *argv[]) {
 	printf("\nnow =\t%s", asctime (localtime ( &rawtime )) );
     /* Monte Carlo average */
     printf("M =\t%d*%d\test: %.0f/%d min\n", M, L*L, T0*M*L*L*L*L/60, nt);
-    rawtime += T0*MT0*L*L*L*L;
+    rawtime += T0*M*L*L*L*L;
     printf("fin =\t%s", asctime (localtime ( &rawtime )) );
     for (i = 0; i < M; i++) {    
     	for (j = 0; j < L*L; j++)
         	simulate(p8, N, h, S, g, g2, c);
 	    if (verbose) {
 	        double t = (double) omp_get_wtime()-t0, pc = 1.*(i+1)/M;
-	        printf("  %.1lf min  \t%.0lf%%\test: %.1f min\tleft: %.1f min\r", t/60, 100.*pc, t/pc/60, (1-pc)*(t/pc)/60);
+	        printf("  %.1lf min  \t%.0lf%%\test: %.1f min\tleft: %.1f min\t \r", t/60, 100.*pc, t/pc/60, (1-pc)*(t/pc)/60);
 	        fflush(stdout);
 	    }
     }
     printf("\ntime =\t%.2lf min\n", (omp_get_wtime()-t0)/60);
+    time(&rawtime);
+	printf("\nnow =\t%s", asctime (localtime ( &rawtime )) );
 
     /* Data dump */
     file = fopen(name, "w+"); if (!file) {printf("Cannot save data\n"); return -1;}
