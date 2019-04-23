@@ -11,7 +11,7 @@ int main(int argc, char *argv[]) {
     int nt = nt0, N = N0, M=M0, MTH=MT0, L=2*N+1,  verbose = 0;
     int i, j;
     double p8 = p80;
-    double T0 = 22e-8;
+    double T0 = 16e-8;
 	srand(time(NULL));
     for(i = 1; i < argc; i++ ) {
         if (!strcmp(argv[i],"-h") || !strcmp(argv[i],"--help")) {
