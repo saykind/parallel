@@ -36,7 +36,7 @@ int init(int N, double complex **h, double complex **S, double **g, double **g2,
             S[q1][q2] = 0;
             if (!q1 && !q2) continue;
             int k1 = (q1<(N+1)) ? q1 : (q1-L), k2 = (q2<(N+1)) ? q2 : (q2-L);
-            double x = a*(k1*k1+k2*k2);
+            double x = a*a*(k1*k1+k2*k2);
             h[q1][q2] = 1/x/x;
         }  
     #pragma omp parallel for collapse(2)
