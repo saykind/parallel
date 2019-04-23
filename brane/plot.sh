@@ -1,5 +1,5 @@
 #!/bin/bash
-for n in 10; do 
+for n in 10 15; do 
     ./x.out "N=$n";
 done
 cd gnuplot

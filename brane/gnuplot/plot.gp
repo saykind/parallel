@@ -10,8 +10,8 @@ set logscale xy
 set xlabel "q" 
 set key box notitle right bottom spacing 1.2
 
-set output sprintf("p=30.eps")
-set title "Inverse Green (p8=30)"
+set output sprintf("p=1.eps")
+set title "Inverse Green (p8=1)"
 set ylabel "G^{-1}"
 set yrange [ * : * ]
 

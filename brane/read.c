@@ -83,12 +83,13 @@ int main(int argc, char *argv[]) {
     char name[20];
     sprintf(name, "gnuplot/N=%d",N);
     file = fopen(name, "w+"); if (!file) {printf("Cannot save data\n"); return -1;}
-    for (i = 0; i < N; i++) {
+    for (i = 1; i < N; i++) {
             fprintf(file,"%lf\t%lf\t%lf\n", (i+1)*2*pi/L, 1./g[0][i+1], g2[0][i+1]/g[0][i+1]);
         }
     fclose(file);
     
     /* Plots */
+    p8 *= 1.2;
 	FILE *gpp = gpinit();	
 	fprintf(gpp, "set xrange [ %lf : %lf ]\n", 1.9*pi/50, 1.1*pi);
     char output[20]; 
@@ -98,7 +99,7 @@ int main(int argc, char *argv[]) {
     sprintf(output,"graphics/Lx=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q_x'\n set ylabel 'G^{-1}'\n");
 	fprintf(gpp, "plot x**4, x**4*(1+(%f/x)**2)**(.4), x**4*%f**.8/x**.8, '-' w errorbars pt 7 ps .5\n", p8, p8);
-	for (i = 0; i < N+1; i++)
+	for (i = 1; i < N+1; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", (i+1)*2*pi/L, 1./g[i+1][0], g2[i+1][0]/g[i+1][0]);
 	fprintf(gpp,"e\n");
 	fflush(gpp);
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]) {
     sprintf(output,"graphics/Ly=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q_y'\n set ylabel 'G^{-1}'\n");
 	fprintf(gpp, "plot x**4, x**4*(1+(%f/x)**2)**(.4), x**4*%f**.8/x**.8, '-' w errorbars pt 7 ps .5\n", p8, p8);
-	for (i = 0; i < N+1; i++)
+	for (i = 1; i < N+1; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", (i+1)*2*pi/L, 1./g[0][i+1], g2[0][i+1]/g[0][i+1]);
 	fprintf(gpp,"e\n");
 	fflush(gpp);
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
     sprintf(output,"graphics/Lr=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q'\n set ylabel 'G^{-1}'\n");
 	fprintf(gpp, "plot 4*x**4, 4*x**4*(1+%f**2/2/x**2)**(.4), 4*x**4*%f**.8/(2*x**2)**.4, '-' w errorbars pt 7 ps .5\n", p8, p8);
-	for (i = 0; i < N+1; i++)
+	for (i = 1; i < N+1; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", (i+1)*2*pi/L, 1./g[i+1][i+1], g2[i+1][i+1]/g[i+1][i+1]);
 	fprintf(gpp,"e\n");
 	fflush(gpp);	
