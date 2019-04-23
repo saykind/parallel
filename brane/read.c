@@ -83,8 +83,9 @@ int main(int argc, char *argv[]) {
     char name[20];
     sprintf(name, "gnuplot/N=%d",N);
     file = fopen(name, "w+"); if (!file) {printf("Cannot save data\n"); return -1;}
-    for (i = 1; i < N; i++) {
-            fprintf(file,"%lf\t%lf\t%lf\n", (i+1)*2*pi/L, 1./g[0][i+1], g2[0][i+1]/g[0][i+1]);
+    for (i = 3; i < N-1; i++) {
+            fprintf(file,"%lf\t%lf\t%lf\n", i*2*pi/L, 1./g[0][i], g2[0][i]/g[0][i]);
+            fprintf(file,"%lf\t%lf\t%lf\n", i*2*pi/L, 1./g[i][0], g2[i][0]/g[i][0]);
         }
     fclose(file);
     
