@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
     }
     L=2*N+1;
     omp_set_num_threads(nt);  
-    printf("\nN =\t%d\nL =\t%d\nthrds =\t%d\np8 =\t%.1lf\n", N, L, nt, p8);
+    printf("\nN =\t%d\nL =\t%d\nthrds =\t%d\np8 =\t%.2lf\n", N, L, nt, p8);
 
     /* Memory allocation */
     double complex **h = (double complex **)malloc(L*sizeof(double complex*));

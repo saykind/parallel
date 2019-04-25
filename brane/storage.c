@@ -26,7 +26,7 @@ int init(int N, double complex **h, double complex **S, double **g, double **g2,
     }
     double a = 2*pi/L;
     h[0][0] = 1/a/a;
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(q1,q2,k1,k2)
     for (q1 = 0; q1 < L; q1++)
          for (q2 = 0; q2 < L; q2++) {
             g[q1][q2] = 0;
@@ -35,11 +35,10 @@ int init(int N, double complex **h, double complex **S, double **g, double **g2,
             c[1][q1][q2] = 0;
             S[q1][q2] = 0;
             if (!q1 && !q2) continue;
-            int k1 = (q1<(N+1)) ? q1 : (q1-L), k2 = (q2<(N+1)) ? q2 : (q2-L);
-            double x = a*a*(k1*k1+k2*k2);
-            h[q1][q2] = 1/x/x;
+            k1 = (q1<(N+1)) ? q1 : (q1-L), k2 = (q2<(N+1)) ? q2 : (q2-L);
+            h[q1][q2] = 1/a/a/(k1*k1+k2*k2);
         }  
-    #pragma omp parallel for collapse(2)
+    #pragma omp parallel for collapse(2) private(q1,q2,k1,k2)
     for (q1 = -N; q1 < N+1; q1++)
         for (q2 = -N; q2 < N+1; q2++) {
             if (!q1 && !q2) continue;

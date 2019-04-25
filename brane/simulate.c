@@ -13,7 +13,7 @@ int simulate(double p8, int N, double complex **h, double complex **S, double **
     int k1 = rand()%L-N, k2 = rand()%L-N, q, q1, q2;
     if (!k1 && !k2) {simulate(p8, N, h, S, g, g2, c); return 0;}
     
-    double A = a*a*(k1*k1+k2*k2), d = d0/A/pow(1+(p8*L/2/pi)*(p8*L/2/pi)/(k1*k1+k2*k2),.4); A = A*A;
+    double A = a*a*(k1*k1+k2*k2), d = d0/A/pow(1+p8*p8/a/a/(k1*k1+k2*k2),.2); A = A*A;
     double complex **dS = (double complex **)malloc(L*sizeof(double complex*));
     for (i = 0; i < L; i++) *(dS+i) = (double complex *)malloc(L*sizeof(double complex));
     dS[0][0] = 0;
@@ -34,7 +34,7 @@ int simulate(double p8, int N, double complex **h, double complex **S, double **
         s +=  (k1*q2-k2*q1) * (k1*q2-k2*q1) *( conj(h[(q1-k1+L)%L][(q2-k2+L)%L])*conj(z) );
         if (!((q1+2*k1)%L) && !((q2+2*k2)%L))
             s += (k1*q2-k2*q1)*(k1*q2-k2*q1)*z*z*d;
-        if (!((q1-2*k1+L)%L) && !((q2-2*k2+L)%L))
+        if (!((q1-2*k1+2*L)%L) && !((q2-2*k2+2*L)%L))
             s += (k1*q2-k2*q1)*(k1*q2-k2*q1)*conj(z)*conj(z)*d;
         s *= a*a*d/(q1*q1+q2*q2);
         dS[(q1+L)%L][(q2+L)%L] = s;

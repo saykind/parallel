@@ -9,21 +9,11 @@
 FILE   *gpinit(void);
 
 int main(int argc, char *argv[]) {
-    int N = N0, i, j, d3=0, verbose=0;
+    int N = N0, i, j, d3 = 0;
     double p8 = p80;
     for(i = 1; i < argc; i++ ) {
-        if (!strcmp(argv[i],"-h") || !strcmp(argv[i],"--help")) {
-            printf("Data plotting. Usage:\n -h\tprint this message\n -v\tverbose mode [not recommended for N<20]\n -d\tprint default values\n");
-            printf(" N=%%d\tset linear lattice size L=2*N+1 total size L*L\n");
-            printf(" p8=%%f\tset interaction force for fit (0 < p8 < 6.28)\n");
-            return 0;
-        } 
         if (!strcmp(argv[i],"-3d")) {
             d3 = 1;
-            continue;
-        }
-        if (!strcmp(argv[i],"-v")) {
-            verbose = 1;
             continue;
         }
         if (argv[i][0] == '-') {
@@ -49,7 +39,7 @@ int main(int argc, char *argv[]) {
 	}
     
     /* Data initialization */
-    char name[10];
+    char name[10]; 
     sprintf(name,"N=%d.dat", N);
     FILE *file = fopen(name, "r");
     if (file) {
@@ -64,38 +54,33 @@ int main(int argc, char *argv[]) {
                     g[i][j]  /= c[1][i][j];
                     g2[i][j] /= c[1][i][j];
                     g2[i][j] = 4*sqrt(fabs((g2[i][j]-g[i][j]*g[i][j])/c[1][i][j]));
-                    if (verbose)
-                        printf("[%d,%d]\t%.3f +/- %.3f  \t(%.0f %% of %d times)\n", i, j, g[i][j], g2[i][j], 100.*c[0][i][j]/c[1][i][j], c[1][i][j]);
+                    printf("[%d,%d]\t%.3f +/- %.3f  \t(%.0f %% of %d times)\n", i, j, g[i][j], g2[i][j], 100.*c[0][i][j]/c[1][i][j], c[1][i][j]);
                     g2[i][j] /= g[i][j];
-                } else if(i || j) {printf("c[1][%d][%d] == 0\n", i, j);}
+                } else {printf("c[1][%d][%d] == %d\n", i, j, N);}
             }        
         fclose(file);
     } else {
         printf("Nothing to read :(\n");
         return -1;
     }
-    if (!verbose)
-        printf("\n[%d,%d]\t%.0f%%\n[%d,%d]\t%.0f%%\n[%d,%d]\t%.0f%%\n[%d,%d]\t%.0f%%\n[%d,%d]\t%.0f%%\n[%d,%d]\t%.0f%%\n\n",\
-         1,1,100.*c[0][1][1]/c[1][1][1], 2,2,100.*c[0][2][2]/c[1][2][2], 4,4,100.*c[0][4][4]/c[1][4][4],\
-         N,N,100.*c[0][N][N]/c[1][N][N], L-4,L-4,100.*c[0][L-4][L-4]/c[1][L-4][L-4], L-2,L-2,100.*c[0][L-2][L-2]/c[1][L-2][L-2]);
     
     /* Plots */
 	FILE *gpp = gpinit();	
-	fprintf(gpp, "set xrange [ %lf : %lf ]\n", 1.9*pi/50, 1.1*pi);
+	fprintf(gpp, "set xrange [ %lf : %lf ]\n", 1.8*pi/L, 1.1*pi);
     char output[20]; 
-    double Q[N], Gx[N], Gy[N], Gr[N];
+    double Q[N], Gx[N], Gy[N], Gr[N], A=2;
     for (i = 0; i < N; i++) {
         Q[i] = (i+1)*2*pi/L;
         Gx[i] = 1./g[i+1][0];
         Gy[i] = 1./g[0][i+1];
         Gr[i] = 1./g[i+1][i+1];
     }
-    fprintf(gpp, "set title 'Inverse Green function (L=%d, p*=%.1lf, M=%d)'\n", L, p8, c[1][N][N]);
+    fprintf(gpp, "set title 'Inverse Green function (L = %d, p*=%.0lf)'\n", L, p8);
     fprintf(gpp, "set logscale xy\n");
     // x-axis
     sprintf(output,"Lx=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q_x'\n set ylabel 'G^{-1}'\n");
-	fprintf(gpp, "plot x**4, x**4*(1+(%f/x)**2)**(.4), x**4*%f**.8/x**.8, '-' w errorbars pt 7 ps .5\n", p8, p8);
+	fprintf(gpp, "plot %f*x**4, %f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, p8);
 	for (i = 0; i < N; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", Q[i], Gx[i], Gx[i]*g2[i+1][0]);
 	fprintf(gpp,"e\n");
@@ -103,7 +88,7 @@ int main(int argc, char *argv[]) {
 	// y-axis
     sprintf(output,"Ly=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q_y'\n set ylabel 'G^{-1}'\n");
-	fprintf(gpp, "plot x**4, x**4*(1+(%f/x)**2)**(.4), x**4*%f**.8/x**.8, '-' w errorbars pt 7 ps .5\n", p8, p8);
+	fprintf(gpp, "plot %f*x**4, %f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, p8);
 	for (i = 0; i < N; i++)
 		fprintf(gpp, "%.6f %.6f %.6f\n", Q[i], Gy[i], Gy[i]*g2[0][i+1]);
 	fprintf(gpp,"e\n");
@@ -111,9 +96,9 @@ int main(int argc, char *argv[]) {
 	// r-axis
     sprintf(output,"Lr=%d.eps", L); fprintf(gpp, "set output '%s'\n", output);
     fprintf(gpp, "set xlabel 'q'\n set ylabel 'G^{-1}'\n");
-	fprintf(gpp, "plot x**4, x**4*(1+%f**2/x**2)**(.4), x**4*%f**.8/(x**2)**.4, '-' w errorbars pt 7 ps .5\n", p8, p8);
+	fprintf(gpp, "plot 4*%f*x**4, 4*%f*x**4*(1+(%f/x)**2)**(.2), '-' w errorbars pt 7 ps .5\n", A, A, p8);
 	for (i = 0; i < N; i++)
-		fprintf(gpp, "%.6f %.6f %.6f\n", sqrt(2)*(i+1)*2*pi/L, Gr[i], Gr[i]*g2[i+1][i+1]);
+		fprintf(gpp, "%.6f %.6f %.6f\n", Q[i], Gr[i], Gr[i]*g2[i+1][i+1]);
 	fprintf(gpp,"e\n");
 	fflush(gpp);	
 	// 3d plot
@@ -121,7 +106,7 @@ int main(int argc, char *argv[]) {
 	    fprintf(gpp, "set term x11\n");
 	    fprintf(gpp, "unset logscale xy\n");
 	    fprintf(gpp, "set xrange [ * : * ]\n");
-	    fprintf(gpp, "splot (x**2+y**2)**2, '-' w points pt 7 ps 1\n");
+	    fprintf(gpp, "splot %f*(x**2+y**2)**2, '-' w points pt 7 ps 1\n", A);
 	    for (i = -N; i < N+1; i++)
 	        for (j = -N; j< N+1; j++) {
 	            if (!i && !j) {continue;}

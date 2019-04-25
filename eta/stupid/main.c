@@ -15,7 +15,7 @@ int main(int argc, char *argv[]) {
     char thrmlzd = 0, verbose = 0;
     for(i = 1; i < argc; i++ ) {
         if (!strcmp(argv[i],"-h") || !strcmp(argv[i],"--help")) {
-            printf("Usage:\n -h\tprint this message\n -v\tverbose mode [not recommended for N<20]\n -d\tprint default values\n");
+            printf("Monte Carlo simulations. Usage:\n -h\tprint this message\n -v\tverbose mode [not recommended for N<20]\n -d\tprint default values\n");
             printf(" nt=%%d\tset number of threads\n");
             printf(" N=%%d\tset linear lattice size L=2*N+1 total size L*L\n");
             printf(" MTH=%%d\tset number of thermalization MC steps (total: MTH*L*L) [recommended value MTH=2000]\n");
@@ -43,7 +43,9 @@ int main(int argc, char *argv[]) {
         sscanf(argv[i], "p8=%lf", &p8);
     }
     omp_set_num_threads(nt);
-    L=2*N+1;    
+    L=2*N+1;  
+//    for (i = 0; i< L*L; i++)  
+//        printf("%d,%d\n",i/L-N,i%L-N);
     printf("\nN =\t%d\nL =\t%d\nthrds =\t%d\np8 =\t%.1lf\n", N, L, nt, p8);
 
     /* Memory allocation */
@@ -96,7 +98,7 @@ int main(int argc, char *argv[]) {
                 }
                 i0 = (i<(N+1)) ? i : (i-L);
                 j0 = (j<(N+1)) ? j : (j-L);
-                x = a*a*( i0*i0 + j0*j0 );
+                x = a*a*( i0*i0 + j0*j0 )*( i0*i0 + j0*j0 );
                 h[i][j] = 1./x;
                 g[i][j] = 0;
                 g2[i][j] = 0;
@@ -112,8 +114,8 @@ int main(int argc, char *argv[]) {
                     continue;
                 for (k1 = -N; k1 < N+1; k1++)
                     for (k2 = -N; k2 < N+1; k2++)   {
-                        double p = a*a*(k1*q2-k2*q1)*(k1*q2-k2*q1)/(q1*q1+q2*q2);
-                        S[(q1+L)%L][(q2+L)%L] += p*h[(k1+L)%L][(k2+L)%L]*conj(h[(k1+q1+L)%L][(k2+q2+L)%L]);
+                        double p = a*(k1*q2-k2*q1);
+                        S[(q1+L)%L][(q2+L)%L] += p*p/(q1*q1+q2*q2)*h[(k1+L)%L][(k2+L)%L]*conj(h[(k1+q1+L)%L][(k2+q2+L)%L]);
                     }
             }
     }
@@ -129,8 +131,8 @@ int main(int argc, char *argv[]) {
 	if (!thrmlzd) {
 	    time(&rawtime);
 	    printf("\nnow =\t%s", asctime (localtime ( &rawtime )) );
-        printf("MTH =\t%d*%d\test: %.0f/%d min\n", MTH, L*L, T0*MTH*L*L*L*L/60, nt );
-        rawtime += T0*MTH*L*L*L*L;
+        printf("MTH =\t%d*%d\test: %.0f/%d min\n", MTH, L*L, T0*MT0*L*L*L*L/60, nt );
+        rawtime += T0*MT0*L*L*L*L;
         printf("fin =\t%s", asctime (localtime ( &rawtime )) );
         for (i = 0; i < MTH; i++) {
 		    for (j = 0; j < L*L; j++)
@@ -148,7 +150,7 @@ int main(int argc, char *argv[]) {
 	printf("\nnow =\t%s", asctime (localtime ( &rawtime )) );
     /* Monte Carlo average */
     printf("M =\t%d*%d\test: %.0f/%d min\n", M, L*L, T0*M*L*L*L*L/60, nt);
-    rawtime += T0*M*L*L*L*L;
+    rawtime += T0*MT0*L*L*L*L;
     printf("fin =\t%s", asctime (localtime ( &rawtime )) );
     for (i = 0; i < M; i++) {    
     	for (j = 0; j < L*L; j++)
@@ -160,8 +162,6 @@ int main(int argc, char *argv[]) {
 	    }
     }
     printf("\ntime =\t%.2lf min\n", (omp_get_wtime()-t0)/60);
-    time(&rawtime);
-	printf("\nnow =\t%s", asctime (localtime ( &rawtime )) );
 
     /* Data dump */
     file = fopen(name, "w+"); if (!file) {printf("Cannot save data\n"); return -1;}
