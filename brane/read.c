@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
             }        
         fclose(file);
     } else {
-        printf("Nothing to read :(\n");
+        printf("\nNothing to read :(\n");
         return -1;
     }
     if (!verbose)
@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
          N,N,100.*c[0][N][N]/c[1][N][N], L-4,L-4,100.*c[0][L-4][L-4]/c[1][L-4][L-4], L-2,L-2,100.*c[0][L-2][L-2]/c[1][L-2][L-2]);
 
     /* Data dump */
+    p8 *= 1.2
     double a = 2*pi/L;
     char name[20];
     sprintf(name, "gnuplot/N=%d",N);
